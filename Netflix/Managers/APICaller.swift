@@ -11,6 +11,8 @@ import Foundation
 struct Constants{
     static let apiKey = "38e7765d6ed9dc334baef8e47ba04752"
     static let baseURL = "https://api.themoviedb.org"
+    static let youKey = "AIzaSyABO7HtJxQIdUY6N7MzRchVSRPAq3gmqZQ"
+    static let youUrl = "https://youtube.googleapis.com/youtube/v3/search"
 }
 
 enum APIError:Error{
@@ -73,6 +75,37 @@ class APICaller{
             do{
                 let results = try JSONDecoder().decode(TrendingTitleResponse.self, from: data)
                 complation(.success(results.results))
+            }catch{
+                complation(.failure(APIError.failedTogetData))
+            }
+        }
+        task.resume()
+    }
+    
+    func search(with query:String,complation:@escaping (Result<[Title],Error>) -> Void){
+        guard let query = query.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)else{return}
+        guard let url = URL(string: "\(Constants.baseURL)/3/search/movie?api_key=\(Constants.apiKey)&query=\(query)") else {return}
+        let task = URLSession.shared.dataTask(with: URLRequest(url: url)) { data, _, error in
+            guard let data = data, error == nil else { return }
+            do{
+                let results = try JSONDecoder().decode(TrendingTitleResponse.self, from: data)
+                complation(.success(results.results))
+            }catch{
+                complation(.failure(APIError.failedTogetData))
+            }
+        }
+        task.resume()
+    }
+    
+    func getMovie(with query:String,complation:@escaping (Result<VideoElement,Error>) -> Void){
+        guard let query = query.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed)else{return}
+        guard let url = URL(string: "\(Constants.youUrl)?q=\(query)&key=\(Constants.youKey)")else{return}
+        let task = URLSession.shared.dataTask(with: URLRequest(url: url)) { data, _, error in
+            guard let data = data, error == nil else { return }
+            do{
+                let results = try JSONDecoder().decode(YoutubeSearchResponse.self, from: data)
+                complation(.success(results.items[0]))
+                
             }catch{
                 complation(.failure(APIError.failedTogetData))
             }
