@@ -17,6 +17,9 @@ enum Sections:Int{
 
 class HomeViewController: UIViewController {
     
+    private var randomTrendingMovies:Title?
+    private var headerView:HeroHeaderUIView?
+    
     let sectionTitles:[String] = ["Tranding Movies","Tranding TV","Popular","Upcoming movies","Top rated"]
 
     private let homeFeedTable:UITableView = {
@@ -34,11 +37,25 @@ class HomeViewController: UIViewController {
         homeFeedTable.dataSource = self
         
         configureNavbar()
+        configureHeaderView()
         
-        let headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 500))
+        headerView = HeroHeaderUIView(frame: CGRect(x: 0, y: 0, width: view.bounds.width, height: 500))
         homeFeedTable.tableHeaderView = headerView
     
         
+    }
+    
+    private func configureHeaderView(){
+        APICaller.shared.getTrendingMovies {[weak self] result in
+            switch result {
+            case .success(let titles):
+                let selectedTitle = titles.randomElement()
+                self?.randomTrendingMovies = selectedTitle
+                self?.headerView?.configure(with: TitleViewModel(titleName: selectedTitle?.original_title ?? "", posterURL: selectedTitle?.poster_path ?? ""))
+            case .failure(let error):
+                print(error.localizedDescription)
+            }
+        }
     }
     
     private func configureNavbar(){
@@ -51,7 +68,7 @@ class HomeViewController: UIViewController {
             UIBarButtonItem(image: UIImage(systemName: "play.rectangle"), style: .done, target: self, action: nil)
         ]
         
-        navigationController?.navigationBar.tintColor = .white
+        navigationController?.navigationBar.tintColor = .label
     }
     
     override func viewDidLayoutSubviews() {
@@ -145,7 +162,7 @@ extension HomeViewController:UITableViewDelegate,UITableViewDataSource{
         guard let header = view as? UITableViewHeaderFooterView else {return}
         header.textLabel?.font = .systemFont(ofSize: 18,weight: .semibold)
         header.textLabel?.frame = CGRect(x: header.bounds.origin.x + 20, y: header.bounds.origin.y, width: 100, height: header.bounds.height)
-        header.textLabel?.textColor = .white
+        header.textLabel?.textColor = .label
         header.textLabel?.text = header.textLabel?.text?.capitalizeFirstLetter()
     }
     
